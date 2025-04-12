@@ -16,13 +16,12 @@ func main() {
     defer file.Close()
 
     reader := bufio.NewReader(file)
-    data := make([]byte, 500)
-    n, err := reader.Read(data)
-    if err != nil {
-        fmt.Println(err)
-        return
+    for range 4 {
+        data, err := reader.ReadBytes('\n')
+        if err != nil {
+            fmt.Println(err)
+            return
+        }
+        fmt.Println(string(data))
     }
-
-    fmt.Printf("Read %d bytes from mail data...\n", n)
-    fmt.Println(string(data))
 }
