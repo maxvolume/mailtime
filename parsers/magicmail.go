@@ -58,14 +58,21 @@ func ParseMbox(filename string, peekNumber int) {
 					break
 				}
 				from, _ := decoder.DecodeHeader(msg.Header.Get("From"))
-				fmt.Printf("From: %s\tTo: %s\tSubject: %s\n", from, msg.Header.Get("To"), msg.Header.Get("Subject"))
+                mailTo := msg.Header.Get("To")
+                msgSubject := msg.Header.Get("Subject")
+				fmt.Printf("From: %s\tTo: %s\tSubject: %s\n", from, mailTo, msgSubject)
+                extractText(msg)
 			}
 			msgbuffer = msgbuffer[:0]
-			fmt.Println("Capacity of msgbuffer: ", cap(msgbuffer))
+            // NOTE: maybe add this behind a verbose flag fmt.Println("Capacity of msgbuffer: ", cap(msgbuffer))
 			msgbuffer = append(msgbuffer, data...)
 			count++
 		} else {
 			msgbuffer = append(msgbuffer, data...)
 		}
 	}
+}
+
+func extractText (msg *mail.Message) {
+    fmt.Printf("Content Type: %s\n\n", msg.Header.Get("Content-Type")) 
 }
