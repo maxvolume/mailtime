@@ -25,9 +25,12 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io"
 	"mime"
+	"mime/multipart"
 	"net/mail"
 	"os"
+	"strings"
 )
 
 func ParseMbox(filename string, peekNumber int) {
@@ -60,9 +63,17 @@ func ParseMbox(filename string, peekNumber int) {
 				from, _ := decoder.DecodeHeader(msg.Header.Get("From"))
                 mailTo := msg.Header.Get("To")
                 msgSubject := msg.Header.Get("Subject")
-				fmt.Printf("From: %s\tTo: %s\tSubject: %s\n", from, mailTo, msgSubject)
-                extractText(msg)
-			}
+                contentType := msg.Header.Get("Content-Type")
+                fmt.Printf("From: %s\tTo: %s\tSubject: %s\n", from, mailTo, msgSubject)
+                fmt.Printf("Content-Type: %s\n\n", contentType)
+                mediaType, params, err := mime.ParseMediaType(contentType)
+                if err != nil {
+                    fmt.Printf("Error parsing media type %s: %s\n", mediaType, err)
+                }
+                if strings.HasPrefix(mediaType, "multipart/") {
+                    parseMultiPart(msg.Body, params["boundary"])
+                }
+            }
 			msgbuffer = msgbuffer[:0]
             // NOTE: maybe add this behind a verbose flag fmt.Println("Capacity of msgbuffer: ", cap(msgbuffer))
 			msgbuffer = append(msgbuffer, data...)
@@ -73,6 +84,35 @@ func ParseMbox(filename string, peekNumber int) {
 	}
 }
 
-func extractText (msg *mail.Message) {
-    fmt.Printf("Content Type: %s\n\n", msg.Header.Get("Content-Type")) 
+func parseMultiPart (mimedata io.Reader, boundary string) {
+    reader := multipart.NewReader(mimedata, boundary)
+    if reader == nil {
+        return
+    }
+    for {
+        part, err := reader.NextPart()
+        if err == io.EOF {
+            break
+        }
+        if err != nil {
+            fmt.Println("Error parsing multipart section: ", err)
+            break
+        }
+        mediaType, params, err := mime.ParseMediaType(part.Header.Get("Content-Type"))
+        if err != nil {
+            fmt.Printf("Error parsing media type %s: %s\n", mediaType, err)
+            continue
+        }
+        if strings.HasPrefix(mediaType, "multipart/") {
+            parseMultiPart(part, params["boundary"])
+        }
+        if strings.HasPrefix(mediaType, "text/plain") {
+            content, err := io.ReadAll(part)
+            if err != nil {
+                fmt.Println("Error reading text part: ", err)
+            }
+            fmt.Printf("%s\n", string(content))
+            fmt.Printf("%s\n\n", ">>>>>>>>>>>>>>>>>>>>>")
+        }
+    }
 }
