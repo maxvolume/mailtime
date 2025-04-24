@@ -110,6 +110,7 @@ func parseMultiPart (mimedata io.Reader, boundary string) {
             content, err := io.ReadAll(part)
             if err != nil {
                 fmt.Println("Error reading text part: ", err)
+				continue
             }
             fmt.Printf("%s\n", string(content))
             fmt.Printf("%s\n\n", ">>>>>>>>>>>>>>>>>>>>>")
