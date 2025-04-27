@@ -33,8 +33,8 @@ import (
 	"strings"
 )
 
-func ParseMbox(filename string, peekNumber int) {
-	fmt.Println("Hi there from benmimer...")
+func ParseMbox(filename string, peekNumber int, peekText bool) {
+	fmt.Printf("%s\n\n", "Hi there from benmimer...")
 	file, err := os.Open(filename)
 	if err != nil {
 		fmt.Println(err)
@@ -47,7 +47,7 @@ func ParseMbox(filename string, peekNumber int) {
 	msgbuffer := make([]byte, 200000)
 	prefix := []byte("From ")
 	count := 0
-	for count < peekNumber {
+	for count <= peekNumber {
 		data, err := reader.ReadBytes('\n')
 		if err != nil {
 			fmt.Println(err)
@@ -71,8 +71,9 @@ func ParseMbox(filename string, peekNumber int) {
                     fmt.Printf("Error parsing media type %s: %s\n", mediaType, err)
                 }
                 if strings.HasPrefix(mediaType, "multipart/") {
-                    parseMultiPart(msg.Body, params["boundary"])
+                    parseMultiPart(msg.Body, params["boundary"], peekText)
                 }
+                fmt.Printf("\n%s\n\n", ">>>>>>>>>>>>>>>>>>>>>")
             }
 			msgbuffer = msgbuffer[:0]
             // NOTE: maybe add this behind a verbose flag fmt.Println("Capacity of msgbuffer: ", cap(msgbuffer))
@@ -84,7 +85,7 @@ func ParseMbox(filename string, peekNumber int) {
 	}
 }
 
-func parseMultiPart (mimedata io.Reader, boundary string) {
+func parseMultiPart (mimedata io.Reader, boundary string, peekText bool) {
     reader := multipart.NewReader(mimedata, boundary)
     if reader == nil {
         return
@@ -103,17 +104,17 @@ func parseMultiPart (mimedata io.Reader, boundary string) {
             fmt.Printf("Error parsing media type %s: %s\n", mediaType, err)
             continue
         }
+        fmt.Printf("Part Media Type: %s\n", mediaType)
         if strings.HasPrefix(mediaType, "multipart/") {
-            parseMultiPart(part, params["boundary"])
+            parseMultiPart(part, params["boundary"], peekText)
         }
-        if strings.HasPrefix(mediaType, "text/plain") {
+        if strings.HasPrefix(mediaType, "text/plain") && peekText {
             content, err := io.ReadAll(part)
             if err != nil {
                 fmt.Println("Error reading text part: ", err)
 				continue
             }
-            fmt.Printf("%s\n", string(content))
-            fmt.Printf("%s\n\n", ">>>>>>>>>>>>>>>>>>>>>")
+            fmt.Printf("\n%s\n\n", string(content))
         }
     }
 }

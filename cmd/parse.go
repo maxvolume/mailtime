@@ -28,10 +28,11 @@ import (
 )
 
 // set variable for Peek messages flag
-var PeekNumber int32
-
+var PeekNumber int
 // set variable for Filename flag
 var Filename string
+// set variable for Peeking message text
+var PeekText bool
 
 // parseCmd represents the parse command
 var parseCmd = &cobra.Command{
@@ -41,13 +42,14 @@ var parseCmd = &cobra.Command{
 	should be parsed. For now we're just defaulting to mime types of text/plain. File attachements 
 	will get extracted/parsed at a later date.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		parsers.ParseMbox(Filename, int(PeekNumber))
+		parsers.ParseMbox(Filename, PeekNumber, PeekText)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(parseCmd)
 	parseCmd.Flags().StringVarP(&Filename, "filename", "f", "", "Path to mbox file (required)")
-	parseCmd.Flags().Int32VarP(&PeekNumber, "peekNumber", "p", 10, "Set number of messages to parse. Default is 10.")
+	parseCmd.Flags().IntVarP(&PeekNumber, "peekNumber", "p", 10, "Set number of messages to parse. Default is 10.")
+    parseCmd.Flags().BoolVarP(&PeekText, "peekText", "t", false, "Display message text. Default is False.")
 	parseCmd.MarkFlagRequired("filename")
 }
